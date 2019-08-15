@@ -16,9 +16,11 @@ LABEL plone=$PLONE_VERSION \
     description="Plone image, based on Unified Installer" \
     maintainer="pablogo"
 
-RUN addgroup -g 500 plone \
- && adduser -S -D -G plone -u 500 plone \
- && mkdir -p /plone/instance /data/filestorage /data/blobstorage
+#RUN addgroup -g 500 plone \
+# && adduser -S -D -G plone -u 500 plone \
+# && mkdir -p /plone/instance /data/filestorage /data/blobstorage
+
+RUN mkdir -p /plone/instance /data/filestorage /data/blobstorage
 
 COPY buildout.cfg /plone/instance/
 
@@ -41,12 +43,12 @@ RUN apk add --no-cache --virtual .build-deps \
 && cd /plone/instance \
 && buildout \
 && ln -s /data/filestorage/ /plone/instance/var/filestorage \
-&& ln -s /data/blobstorage /plone/instance//var/blobstorage \
-&& chown -R plone:plone /plone /data \
+&& ln -s /data/blobstorage /plone/instance/var/blobstorage \
+#&& chown -R plone:plone /plone /data \
 && rm -rf /Plone* \
 && apk del .build-deps \
 && apk add --no-cache --virtual .run-deps \
-    su-exec \
+   # su-exec \
     bash \
     rsync \
     libxml2 \
@@ -54,9 +56,7 @@ RUN apk add --no-cache --virtual .build-deps \
     libjpeg-turbo \
 && rm -rf /plone/buildout-cache/downloads/*
 
-VOLUME /data
-
-COPY docker-initialize.py docker-entrypoint.sh /
+#VOLUME /data
 
 EXPOSE 8080
 WORKDIR /plone/instance
@@ -64,6 +64,8 @@ WORKDIR /plone/instance
 #HEALTHCHECK --interval=1m --timeout=5s --start-period=1m
 HEALTHCHECK --interval=1m --timeout=5s \
   CMD nc -z -w5 127.0.0.1 8080 || exit 1
+
+COPY docker-initialize.py docker-entrypoint.sh /
 
 ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD ["start"]
