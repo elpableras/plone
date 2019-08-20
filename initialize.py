@@ -8,7 +8,6 @@ warnings.simplefilter('always', DeprecationWarning)
 class Environment(object):
     """ Configure container via environment variables
     """
-    print("1. Configure container via environment variables")
     def __init__(self, env=os.environ,
                  zope_conf="/plone/instance/parts/instance/etc/zope.conf",
                  custom_conf="/plone/instance/custom.cfg",
@@ -24,21 +23,16 @@ class Environment(object):
     def zeoclient(self):
         """ ZEO Client
         """
-        print ("5. ZEO Client")
         server = self.env.get("ZEO_ADDRESS", None)
         if not server:
-            print("NOT SERVER")
             return
 
         config = ""
         with open(self.zope_conf, "r") as cfile:
-            print("CONFIG R")
             config = cfile.read()
-            print(config)
 
         # Already initialized
         if "<blobstorage>" not in config:
-            print("NOT IN CONFIG")
             return
 
         read_only = self.env.get("ZEO_READ_ONLY", "false")
@@ -56,20 +50,16 @@ class Environment(object):
         )
 
         pattern = re.compile(r"<blobstorage>.+</blobstorage>", re.DOTALL)
-        print(pattern)
         config = re.sub(pattern, zeo_conf, config)
 
         with open(self.zope_conf, "w") as cfile:
-            print("CONFIG W")
             cfile.write(config)
 
     def zeopack(self):
         """ ZEO Pack
         """
-        print ("6. ZEO Pack")
         server = self.env.get("ZEO_ADDRESS", None)
         if not server:
-            print("NOT SERVER")
             return
 
         if ":" in server:
@@ -89,11 +79,8 @@ class Environment(object):
     def zeoserver(self):
         """ ZEO Server
         """
-        print ("7. ZEO Server")
         pack_keep_old = self.env.get("ZEO_PACK_KEEP_OLD", '')
-        print(pack_keep_old)
         if pack_keep_old.lower() in ("false", "no", "0", "n", "f"):
-            print("pack_keep_old")
             with open(self.zeoserver_conf, 'r') as cfile:
                 text = cfile.read()
                 if 'pack-keep-old' not in text:
@@ -108,7 +95,6 @@ class Environment(object):
     def buildout(self):
         """ Buildout from environment variables
         """
-        print ("4. Buildout from environment variables")
         # Already configured
         if os.path.exists(self.custom_conf):
             return
@@ -116,56 +102,43 @@ class Environment(object):
         eggs = self.env.get("PLONE_ADDONS",
                self.env.get("ADDONS", "")).strip().split()
         if not eggs:
-            print("NOT EGGS")
             eggs = self.env.get("BUILDOUT_EGGS", "").strip().split()
-            print (eggs)
             if eggs:
-                print("EGGS")
                 warnings.warn(
                     "BUILDOUT_EGGS is deprecated. Please use "
                     "PLONE_ADDONS instead !!!", DeprecationWarning)
 
         zcml = self.env.get("PLONE_ZCML",
                self.env.get("ZCML", "")).strip().split()
-        print(zcml)
         if not zcml:
-            print("NOT ZCML")
             zcml = self.env.get("BUILDOUT_ZCML", "").strip().split()
             if zcml:
-                print("ZCML")
                 warnings.warn(
                     "BUILDOUT_ZCML is deprecated. Please use "
                     "PLONE_ZCML instead !!!", DeprecationWarning)
 
         develop = self.env.get("PLONE_DEVELOP",
                   self.env.get("DEVELOP", "")).strip().split()
-        print(develop)
         if not develop:
-            print("NOT DEVELOP")
             develop = self.env.get("BUILDOUT_DEVELOP", "").strip().split()
             if develop:
-                print("DEVELOP")
                 warnings.warn(
                     "BUILDOUT_DEVELOP is deprecated. Please use "
                     "PLONE_DEVELOP instead !!!", DeprecationWarning)
 
         if not (eggs or zcml or develop):
-            print("NOT EGGS ZCML DEVELOP")
             return
-            
-        print("BUILDOUT")
+
         buildout = BUILDOUT_TEMPLATE.format(
             eggs="\n\t".join(eggs),
             zcml="\n\t".join(zcml),
             develop="\n\t".join(develop)
         )
-        print(buildout)
 
         with open(self.custom_conf, 'w') as cfile:
             cfile.write(buildout)
 
     def setup(self, **kwargs):
-        print("3. SETUP")
         self.buildout()
         self.zeoclient()
         self.zeopack()
@@ -198,7 +171,6 @@ zcml += {zcml}
 def initialize():
     """ Configure Plone instance as ZEO Client
     """
-    print("2. Configure Plone instance as ZEO Client")
     environment = Environment()
     environment.setup()
 
