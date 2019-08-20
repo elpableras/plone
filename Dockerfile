@@ -7,8 +7,7 @@ ENV PIP=19.0.3 \
     PLONE_MAJOR=5.2 \
     PLONE_VERSION=5.2 \
     PLONE_VERSION_RELEASE=5.2.0 \
-    PLONE_MD5=211ff749422611db2e448dea639e1fba\
-    PLONE_USER=plone
+    PLONE_MD5=211ff749422611db2e448dea639e1fba
 
 ENV PLONE /plone
 ENV DATA  /data
@@ -20,7 +19,10 @@ LABEL plone=$PLONE_VERSION \
     description="Plone image, based on Unified Installer" \
     maintainer="pablogo"
 
-RUN useradd --system -m -d ${PLONE} -U -u 500 ${PLONE_USER}
+# switch to root user
+USER 0
+
+#RUN useradd --system -m -d ${PLONE} -U -u 500 ${PLONE_USER}
 # && mkdir -p /plone/instance/ /data/filestorage /data/blobstorage
 
 RUN set -x \
@@ -42,7 +44,7 @@ RUN buildDeps="dpkg-dev gcc libbz2-dev libc6-dev libffi-dev libjpeg62-turbo-dev 
  && buildout \
  && ln -s "${DATA}/filestorage/" "${PLONE}/instance/var/filestorage" \
  && ln -s "${DATA}/blobstorage" "${PLONE}/instance/var/blobstorage" \
- && chown -R ${PLONE_USER}:${PLONE_USER} /plone /data \
+ && chown -R 1001:0 /plone /data \
  && rm -rf /Plone* \
  && apt-get purge -y --auto-remove $buildDeps \
  && apt-get install -y --no-install-recommends $runDeps \
@@ -64,6 +66,9 @@ WORKDIR ${PLONE}/instance
 #HEALTHCHECK --interval=1m --timeout=5s --start-period=1m \
 HEALTHCHECK --interval=1m --timeout=5s \
   CMD nc -z -w5 127.0.0.1 8080 || exit 1
+
+# switch back to unpriviledged user
+USER 1001
 
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["start"]
